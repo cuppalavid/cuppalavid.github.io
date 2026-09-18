@@ -73,11 +73,10 @@
               <span class="status-dot"></span>
               <span class="status-text">Space kontrol ediliyor</span>
             </div>
-            <button class="account-button" id="account-button">
+            <button class="account-button" id="account-button" aria-label="Hesap" title="Hesap">
               <span class="account-avatar" id="account-avatar">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 21a7.5 7.5 0 0 1 15 0" /></svg>
               </span>
-              <span class="account-copy"><b id="account-label">Hugging Face’e bağlan</b><small id="account-subtitle">Pro kotanı kullan</small></span>
             </button>
           </div>
         </header>
@@ -169,7 +168,6 @@
               </div>
             </div>
           </div>
-          <p class="privacy-note">Hugging Face hesabın yalnızca bu sekmede tutulur; erişim anahtarın site koduna kaydedilmez.</p>
         </section>
       </main>
     </div>
@@ -200,29 +198,6 @@
         <span><b>Promptu iyileştir</b><small>Model, anlatımını daha ayrıntılı hâle getirir.</small></span>
         <input id="upsample-input" type="checkbox" /><i aria-hidden="true"></i>
       </label>
-    </div>
-
-    <div class="modal-backdrop" id="login-modal" hidden>
-      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="login-title">
-        <button class="icon-button modal-close" data-close="login" aria-label="Pencereyi kapat">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
-        </button>
-        <div class="hf-logo" aria-hidden="true">🤗</div>
-        <span class="eyebrow">Hugging Face</span>
-        <h2 id="login-title">Pro hesabınla bağlan</h2>
-        <p>ZeroGPU kotan ve sıra önceliğin üretim sırasında hesabından kullanılır.</p>
-        <button class="primary-login" id="oauth-login">
-          Hugging Face ile giriş yap
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg>
-        </button>
-        <div class="divider"><span>veya erişim anahtarıyla</span></div>
-        <label class="token-field">
-          <span>Hugging Face token</span>
-          <div><input id="token-input" type="password" placeholder="hf_••••••••••••" autocomplete="off" /><button id="token-connect">Bağlan</button></div>
-        </label>
-        <p class="modal-footnote">Token yalnızca bu tarayıcı sekmesinin belleğinde tutulur. Salt okuma yetkili bir token yeterlidir.</p>
-        <div class="form-error" id="login-error" hidden></div>
-      </section>
     </div>
 
     <div class="modal-backdrop" id="account-modal" hidden>

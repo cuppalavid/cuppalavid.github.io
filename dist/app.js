@@ -182,8 +182,6 @@ function setUser(user) {
   const name = user?.fullname || user?.name || user?.preferred_username || user?.username || "Hugging Face";
   const username = user?.name || user?.preferred_username || user?.username || "bağlı";
   const avatar = user?.avatarUrl || user?.picture || user?.avatar_url || "";
-  $("account-label").textContent = name;
-  $("account-subtitle").textContent = user?.isPro ? "Pro hesap bağlı" : `@${username}`;
   $("account-title").textContent = name;
   $("profile-detail").textContent = `${user?.isPro ? "Pro hesap" : "Hugging Face hesabı"} · @${username}`;
   const avatarMarkup = avatar ? `<img src="${avatar}" alt="" />` : "HF";
@@ -197,8 +195,6 @@ function clearUser() {
   state.client?.close?.();
   state.client = null;
   sessionStorage.removeItem(SESSION_TOKEN_KEY);
-  $("account-label").textContent = "Hugging Face’e bağlan";
-  $("account-subtitle").textContent = "Pro kotanı kullan";
   $("account-avatar").innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 21a7.5 7.5 0 0 1 15 0" /></svg>';
 }
 
@@ -319,7 +315,11 @@ function readableError(error) {
 async function generateVideo() {
   const prompt = $("prompt").value.trim();
   if (!prompt) { showToast("Önce videonu birkaç cümleyle anlat."); $("prompt").focus(); return; }
-  if (!state.token) { openModal("login-modal"); return; }
+  if (!state.token) {
+    showToast("Güvenli hesap bağlantısı açılıyor…");
+    try { await beginOAuth(); } catch (error) { showToast(readableError(error)); }
+    return;
+  }
   if (state.busy) return;
   setBusy(true);
   showLoading("Video hazırlanıyor", "MiniMax H3 isteği sıraya alınıyor…");
@@ -515,30 +515,15 @@ function wireEvents() {
     refreshSettingsSummary();
   });
   $("random-seed").addEventListener("click", () => { $("seed-input").value = Math.floor(Math.random() * 2147483647); });
-  $("account-button").addEventListener("click", () => openModal(state.token ? "account-modal" : "login-modal"));
-  document.querySelector('[data-close="login"]').addEventListener("click", () => closeModal("login-modal"));
+  $("account-button").addEventListener("click", async () => {
+    if (state.token) {
+      openModal("account-modal");
+      return;
+    }
+    try { await beginOAuth(); } catch (error) { showToast(readableError(error)); }
+  });
   document.querySelector('[data-close="account"]').addEventListener("click", () => closeModal("account-modal"));
-  $("login-modal").addEventListener("click", (event) => { if (event.target === $("login-modal")) closeModal("login-modal"); });
   $("account-modal").addEventListener("click", (event) => { if (event.target === $("account-modal")) closeModal("account-modal"); });
-  $("oauth-login").addEventListener("click", async () => {
-    $("login-error").hidden = true;
-    try { await beginOAuth(); } catch (error) { $("login-error").textContent = readableError(error); $("login-error").hidden = false; }
-  });
-  $("token-connect").addEventListener("click", async () => {
-    const button = $("token-connect");
-    button.disabled = true;
-    $("login-error").hidden = true;
-    try {
-      await connectWithToken($("token-input").value);
-      $("token-input").value = "";
-      closeModal("login-modal");
-      showToast("Hugging Face hesabın bağlandı.");
-    } catch (error) {
-      $("login-error").textContent = readableError(error);
-      $("login-error").hidden = false;
-    } finally { button.disabled = false; }
-  });
-  $("token-input").addEventListener("keydown", (event) => { if (event.key === "Enter") $("token-connect").click(); });
   $("logout-button").addEventListener("click", () => { clearUser(); closeModal("account-modal"); showToast("Hugging Face bağlantısı kesildi."); });
   $("menu-button").addEventListener("click", () => { $("sidebar").classList.add("open"); $("sidebar-scrim").classList.add("open"); });
   $("sidebar-close").addEventListener("click", closeSidebar);

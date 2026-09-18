@@ -89,15 +89,11 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); box-shadow: 0 0 0 4px rgba(200,138,42,.1); }
 .space-status.ready .status-dot { background: var(--success); box-shadow: 0 0 0 4px rgba(46,139,97,.1); }
 .space-status.error .status-dot { background: var(--danger); box-shadow: 0 0 0 4px rgba(200,77,77,.1); }
-.account-button { border: 1px solid var(--line); background: rgba(255,255,255,.72); border-radius: 13px; min-height: 44px; padding: 5px 10px 5px 6px; display: flex; align-items: center; gap: 9px; cursor: pointer; box-shadow: var(--shadow-sm); }
+.account-button { width: 40px; height: 40px; border: 1px solid var(--line); background: rgba(255,255,255,.72); border-radius: 12px; padding: 3px; display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow-sm); }
 .account-button:hover { background: var(--surface); }
 .account-avatar { width: 32px; height: 32px; border-radius: 9px; background: var(--surface-soft); display: grid; place-items: center; overflow: hidden; flex: none; }
 .account-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .account-avatar svg { width: 17px; }
-.account-copy { text-align: left; }
-.account-copy b, .account-copy small { display: block; white-space: nowrap; }
-.account-copy b { font-size: 12px; }
-.account-copy small { color: var(--muted); font-size: 10px; margin-top: 1px; }
 
 .conversation { width: min(920px, calc(100% - 40px)); margin: 0 auto; padding: 54px 0 230px; flex: 1; display: flex; align-items: center; justify-content: center; }
 .welcome { width: 100%; max-width: 760px; text-align: center; }
@@ -155,7 +151,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .generate-button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .generate-button svg { width: 25px; height: 25px; padding: 4px; border-radius: 7px; background: rgba(255,255,255,.12); }
 .stop-button { height: 36px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 12px; font-weight: 700; cursor: pointer; }
-.privacy-note { margin: 8px 0 0; text-align: center; color: var(--faint); font-size: 11px; }
 .attachment-previews { display: flex; gap: 8px; padding-bottom: 11px; }
 .preview-item { position: relative; width: 104px; height: 68px; border-radius: 10px; overflow: hidden; background: var(--surface-soft); }
 .preview-item img { width: 100%; height: 100%; object-fit: cover; }
@@ -167,7 +162,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .popover-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
 .popover h3 { margin: 4px 0 0; font: 600 19px "Manrope", sans-serif; letter-spacing: -.025em; }
 .field { display: block; margin-top: 14px; }
-.field > span, .field label > span, .token-field > span { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; font-weight: 700; margin-bottom: 7px; }
+.field > span, .field label > span { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; font-weight: 700; margin-bottom: 7px; }
 .field select, .field input[type=number] { width: 100%; height: 40px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 0 10px; color: var(--ink); }
 .split-field, .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .split-field input[type=range] { width: 100%; accent-color: var(--accent); }
@@ -187,20 +182,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .modal-card { position: relative; width: min(460px, 100%); border-radius: 21px; background: var(--surface); border: 1px solid rgba(255,255,255,.65); padding: 30px; box-shadow: var(--shadow-lg); text-align: center; }
 .modal-card.compact { text-align: left; }
 .modal-close { position: absolute; top: 12px; right: 12px; }
-.hf-logo { width: 54px; height: 54px; display: grid; place-items: center; margin: 0 auto 17px; background: #fff1b8; border-radius: 16px; font-size: 27px; }
 .modal-card h2 { margin: 7px 0 9px; font: 600 25px/1.2 "Manrope", sans-serif; letter-spacing: -.035em; }
 .modal-card > p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 auto 21px; max-width: 350px; }
-.primary-login { width: 100%; height: 47px; border: 0; border-radius: 12px; background: var(--ink); color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; cursor: pointer; }
-.primary-login:hover { background: #000; }
-.primary-login svg { width: 17px; }
-.divider { display: flex; align-items: center; gap: 11px; color: var(--faint); font-size: 11px; margin: 20px 0 16px; }
-.divider::before, .divider::after { content: ""; height: 1px; background: var(--line-soft); flex: 1; }
-.token-field { display: block; text-align: left; }
-.token-field > div { display: grid; grid-template-columns: 1fr auto; gap: 7px; }
-.token-field input { min-width: 0; height: 43px; border: 1px solid var(--line); border-radius: 10px; padding: 0 11px; }
-.token-field button { border: 0; border-radius: 10px; background: var(--accent-soft); color: var(--accent-dark); padding: 0 14px; font-weight: 700; cursor: pointer; }
-.modal-card .modal-footnote { margin: 11px 0 0; color: var(--faint); font-size: 11px; line-height: 1.5; }
-.form-error { margin-top: 12px; padding: 9px 11px; border-radius: 9px; color: #9d3838; background: #fff0f0; text-align: left; font-size: 12px; }
 .profile-line { display: flex; align-items: center; gap: 15px; padding-right: 30px; }
 .profile-avatar { width: 56px; height: 56px; border-radius: 15px; background: var(--accent-soft); display: grid; place-items: center; font-weight: 800; overflow: hidden; flex: none; }
 .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -233,8 +216,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 @media (max-width: 660px) {
   .topbar { height: 62px; }
   .model-pill { padding-left: 4px; }
-  .model-pill svg, .space-status, .account-copy { display: none; }
-  .account-button { min-height: 38px; padding: 3px; border: 0; box-shadow: none; background: transparent; }
+  .model-pill svg, .space-status { display: none; }
+  .account-button { width: 38px; height: 38px; padding: 3px; border: 0; box-shadow: none; background: transparent; }
   .conversation { width: calc(100% - 28px); padding-top: 34px; padding-bottom: 225px; }
   .welcome { align-self: flex-start; padding-top: 7vh; }
   .welcome > p { font-size: 15px; margin-bottom: 24px; }
@@ -245,7 +228,6 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   .composer { border-radius: 16px; padding: 12px; }
   .tool-button span { display: none; }
   #settings-summary { display: inline; }
-  .privacy-note { display: none; }
   .result-heading { align-items: center; }
   .result-heading h2 { font-size: 22px; }
   .download-button { width: 40px; padding: 0; justify-content: center; font-size: 0; }
