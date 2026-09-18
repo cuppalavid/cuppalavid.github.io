@@ -3,8 +3,6 @@ import { Client, handle_file } from "https://cdn.jsdelivr.net/npm/@gradio/client
 const SPACE_ID = "Pepe104/MiniMax-H3-Turbo-Lora-UNCENSORED";
 const SPACE_ORIGIN = "https://pepe104-minimax-h3-turbo-lora-uncensored.hf.space";
 const PERSISTENT_TOKEN_KEY = "cuppalavid_hf_token";
-const OAUTH_STATE_KEY = "cuppalavid_oauth_state";
-const OAUTH_VERIFIER_KEY = "cuppalavid_oauth_verifier";
 const HISTORY_KEY = "cuppalavid_history_v1";
 
 const DEFAULT_CANVASES = [
@@ -194,6 +192,15 @@ function setUser(user) {
   const avatarMarkup = avatar ? `<img src="${avatar}" alt="" />` : "HF";
   $("account-avatar").innerHTML = avatar ? avatarMarkup : "HF";
   $("profile-avatar").innerHTML = avatarMarkup;
+  $("logout-button").hidden = false;
+}
+
+function setDefaultApiIdentity() {
+  $("account-title").textContent = "MiniMax H3 Turbo";
+  $("profile-detail").textContent = "API hazır";
+  $("account-avatar").innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 21a7.5 7.5 0 0 1 15 0" /></svg>';
+  $("profile-avatar").textContent = "H3";
+  $("logout-button").hidden = true;
 }
 
 function clearUser() {
@@ -203,7 +210,7 @@ function clearUser() {
   state.client = null;
   localStorage.removeItem(PERSISTENT_TOKEN_KEY);
   sessionStorage.removeItem(PERSISTENT_TOKEN_KEY);
-  $("account-avatar").innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 21a7.5 7.5 0 0 1 15 0" /></svg>';
+  setDefaultApiIdentity();
 }
 
 async function verifyToken(token) {
@@ -214,88 +221,10 @@ async function verifyToken(token) {
   return response.json();
 }
 
-async function connectWithToken(token) {
-  const clean = token.trim();
-  if (!clean) throw new Error("Bir Hugging Face token girmen gerekiyor.");
-  const user = await verifyToken(clean);
-  state.token = clean;
-  state.client = null;
-  localStorage.setItem(PERSISTENT_TOKEN_KEY, clean);
-  sessionStorage.removeItem(PERSISTENT_TOKEN_KEY);
-  setUser(user);
-  return user;
-}
-
-function base64Url(bytes) {
-  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-async function sha256(value) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return base64Url(new Uint8Array(digest));
-}
-
-async function beginOAuth() {
-  if (!window.isSecureContext) {
-    throw new Error("Hugging Face girişi yalnızca güvenli HTTPS adresinde kullanılabilir.");
-  }
-  const verifier = base64Url(crypto.getRandomValues(new Uint8Array(64)));
-  const oauthState = base64Url(crypto.getRandomValues(new Uint8Array(24)));
-  sessionStorage.setItem(OAUTH_VERIFIER_KEY, verifier);
-  sessionStorage.setItem(OAUTH_STATE_KEY, oauthState);
-  const clientId = `${window.location.origin}/.well-known/oauth-cimd/`;
-  const redirectUri = `${window.location.origin}/`;
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: "code",
-    scope: "openid profile",
-    state: oauthState,
-    code_challenge: await sha256(verifier),
-    code_challenge_method: "S256",
-  });
-  window.location.assign(`https://huggingface.co/oauth/authorize?${params}`);
-}
-
-async function completeOAuthIfPresent() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
-  const error = params.get("error");
-  if (!code && !error) return false;
-  history.replaceState({}, document.title, `${window.location.pathname}${window.location.hash}`);
-  if (error) {
-    showToast(`Hugging Face girişi tamamlanmadı: ${params.get("error_description") || error}`);
-    return true;
-  }
-  const returnedState = params.get("state");
-  const expectedState = sessionStorage.getItem(OAUTH_STATE_KEY);
-  const verifier = sessionStorage.getItem(OAUTH_VERIFIER_KEY);
-  sessionStorage.removeItem(OAUTH_STATE_KEY);
-  sessionStorage.removeItem(OAUTH_VERIFIER_KEY);
-  if (!verifier || !expectedState || returnedState !== expectedState) throw new Error("Giriş doğrulaması eşleşmedi. Lütfen tekrar dene.");
-  const body = new URLSearchParams({
-    grant_type: "authorization_code",
-    code,
-    client_id: `${window.location.origin}/.well-known/oauth-cimd/`,
-    redirect_uri: `${window.location.origin}/`,
-    code_verifier: verifier,
-  });
-  const response = await fetch("https://huggingface.co/oauth/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-  const data = await response.json();
-  if (!response.ok || !data.access_token) throw new Error(data.error_description || "Hugging Face oturumu açılamadı.");
-  await connectWithToken(data.access_token);
-  showToast("Hugging Face hesabın bağlandı.");
-  return true;
-}
-
 async function getClient() {
   if (state.client) return state.client;
   state.client = await Client.connect(SPACE_ID, {
-    token: state.token,
+    ...(state.token ? { token: state.token } : {}),
     events: ["data", "status", "log"],
     record_history: false,
     status_callback: (status) => {
@@ -317,18 +246,13 @@ function readableError(error) {
   if (/quota|exceeded|GPU/i.test(raw)) return "Hugging Face GPU kotası bu üretim için yeterli değil veya geçici olarak dolu.";
   if (/queue.*full|503/i.test(raw)) return "Space kuyruğu şu anda dolu. Biraz sonra tekrar dene.";
   if (/loading|starting|wake/i.test(raw)) return "Model hâlâ hazırlanıyor. Space hazır olduğunda tekrar dene.";
-  if (/unauthorized|401|token/i.test(raw)) return "Hugging Face oturumu doğrulanamadı. Hesabını yeniden bağla.";
+  if (/unauthorized|401|token/i.test(raw)) return "Hugging Face Space bağlantısı doğrulanamadı. Biraz sonra tekrar dene.";
   return raw.slice(0, 360);
 }
 
 async function generateVideo() {
   const prompt = $("prompt").value.trim();
   if (!prompt) { showToast("Önce videonu birkaç cümleyle anlat."); $("prompt").focus(); return; }
-  if (!state.token) {
-    showToast("Güvenli hesap bağlantısı açılıyor…");
-    try { await beginOAuth(); } catch (error) { showToast(readableError(error)); }
-    return;
-  }
   if (state.busy) return;
   setBusy(true);
   showLoading("Video hazırlanıyor", "MiniMax H3 isteği sıraya alınıyor…");
@@ -358,7 +282,7 @@ async function generateVideo() {
       if (message.type === "status") {
         if (message.stage === "pending") {
           $("job-title").textContent = message.position != null ? `Sırada ${message.position + 1}.` : "Sırada bekliyor";
-          $("job-detail").textContent = "Pro hesabının ZeroGPU önceliği kullanılıyor.";
+          $("job-detail").textContent = state.token ? "Pro hesabının ZeroGPU önceliği kullanılıyor." : "Video isteği sıraya alındı.";
           setProgress(22, true);
         } else if (message.stage === "generating" || message.stage === "streaming") {
           $("job-title").textContent = "Sahne üretiliyor";
@@ -524,13 +448,7 @@ function wireEvents() {
     refreshSettingsSummary();
   });
   $("random-seed").addEventListener("click", () => { $("seed-input").value = Math.floor(Math.random() * 2147483647); });
-  $("account-button").addEventListener("click", async () => {
-    if (state.token) {
-      openModal("account-modal");
-      return;
-    }
-    try { await beginOAuth(); } catch (error) { showToast(readableError(error)); }
-  });
+  $("account-button").addEventListener("click", () => openModal("account-modal"));
   document.querySelector('[data-close="account"]').addEventListener("click", () => closeModal("account-modal"));
   $("account-modal").addEventListener("click", (event) => { if (event.target === $("account-modal")) closeModal("account-modal"); });
   $("logout-button").addEventListener("click", () => { clearUser(); closeModal("account-modal"); showToast("Hugging Face bağlantısı kesildi."); });
@@ -551,12 +469,12 @@ function wireEvents() {
 
 async function initialize() {
   wireEvents();
+  setDefaultApiIdentity();
   renderHistory();
   await Promise.allSettled([loadConfig(), pollSpace()]);
   setInterval(pollSpace, 30000);
   try {
-    const completed = await completeOAuthIfPresent();
-    if (!completed && state.token) setUser(await verifyToken(state.token));
+    if (state.token) setUser(await verifyToken(state.token));
   } catch (error) {
     clearUser();
     showToast(readableError(error));
