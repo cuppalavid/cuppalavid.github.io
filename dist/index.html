@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f7f7f5" />
     <meta
       name="description"
-      content="Yapay zekâ ile sesli videolar üretmek için sade bir arayüz."
+      content="Turn a written idea and optional reference frames into an AI-generated video."
     />
-    <title>Cuppalavid — Yapay zekâ ile video üret</title>
+    <title>Cuppalavid — Create AI videos</title>
     <link
       rel="icon"
       type="image/svg+xml"
@@ -20,30 +20,30 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Manrope:wght@500;600;700&amp;display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260918-2" />
+    <link rel="stylesheet" href="./styles.css?v=20260919-8" />
   </head>
   <body>
     <div class="app-shell">
-      <aside class="sidebar" id="sidebar" aria-label="Yan menü">
+      <aside class="sidebar" id="sidebar" aria-label="Project navigation">
         <div class="brand-row">
-          <a class="brand" href="./" aria-label="Cuppalavid ana sayfa">
+          <a class="brand" href="./" aria-label="Cuppalavid home">
             <span class="brand-mark" aria-hidden="true"><i></i></span>
             <span>Cuppalavid</span>
           </a>
-          <button class="icon-button sidebar-close" id="sidebar-close" aria-label="Menüyü kapat">
+          <button class="icon-button sidebar-close" id="sidebar-close" aria-label="Close menu">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
           </button>
         </div>
 
         <button class="new-project" id="new-project">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-          Yeni video
+          New video
         </button>
 
         <section class="history-section" aria-labelledby="history-title">
-          <div class="section-label" id="history-title">Son çalışmalar</div>
+          <div class="section-label" id="history-title">Recent videos</div>
           <div class="history-list" id="history-list">
-            <div class="history-empty">Ürettiğin videolar burada görünür.</div>
+            <div class="history-empty">Your generated videos will appear here.</div>
           </div>
         </section>
 
@@ -53,36 +53,38 @@
 
       <main class="workspace">
         <header class="topbar">
-          <button class="icon-button menu-button" id="menu-button" aria-label="Menüyü aç">
+          <button class="icon-button menu-button" id="menu-button" aria-label="Open menu">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
           </button>
           <div class="topbar-actions">
-            <div class="space-status" id="space-status" title="Sistem durumu">
+            <div class="space-status" id="space-status" title="System status">
               <span class="status-dot"></span>
-              <span class="status-text">Kontrol ediliyor</span>
+              <span class="status-text">Checking</span>
             </div>
           </div>
         </header>
 
         <section class="conversation" id="conversation" aria-live="polite">
           <div class="welcome" id="welcome">
+            <div class="ambient-reels" id="ambient-reels" aria-hidden="true"></div>
             <div class="welcome-mark" aria-hidden="true">
               <span></span><span></span><span></span>
             </div>
-            <h1>Nasıl bir video hayal ediyorsun?</h1>
-            <p>Bir sahneyi anlat. Görüntü ve ses birlikte üretilecek.</p>
+            <span class="welcome-kicker">AI video studio</span>
+            <h1>Turn an idea into a video.</h1>
+            <p>Describe the scene, add optional reference frames, and create a video with sound.</p>
             <div class="suggestion-grid">
-              <button class="suggestion" data-prompt="Sisli bir İstanbul sokağında gece yürüyen yalnız bir kedi, ıslak kaldırımda neon yansımaları, uzaktan vapur sesi">
+              <button class="suggestion" data-prompt="A solitary cat walking through a foggy Istanbul street at night, neon reflections on wet pavement, a distant ferry horn, cinematic tracking shot">
                 <span class="suggestion-icon violet">↗</span>
-                <span><b>Sinematik bir sahne</b><small>Atmosfer, hareket ve ortam sesi</small></span>
+                <span><b>Cinematic scene</b><small>Atmosphere, motion, and sound</small></span>
               </button>
-              <button class="suggestion" data-prompt="Beyaz bir stüdyoda kendi etrafında yavaşça dönen modern bir parfüm şişesi, yumuşak ışık geçişleri, zarif cam sesleri">
+              <button class="suggestion" data-prompt="A modern perfume bottle slowly rotating in a white studio, soft light transitions, controlled camera movement, delicate glass sounds">
                 <span class="suggestion-icon amber">◇</span>
-                <span><b>Ürün videosu</b><small>Temiz ışık ve kontrollü kamera</small></span>
+                <span><b>Product video</b><small>Clean light and camera control</small></span>
               </button>
-              <button class="suggestion" data-prompt="Rüzgârlı bir tepede gün doğumuna karşı koşan bir at, uzun otlar dalgalanıyor, güçlü nal ve rüzgâr sesleri">
+              <button class="suggestion" data-prompt="A horse running across a windy hill at sunrise, long grass moving in the wind, powerful hoofbeats, wide dynamic framing">
                 <span class="suggestion-icon blue">≈</span>
-                <span><b>Doğa ve hareket</b><small>Dinamik kadraj ve gerçekçi ses</small></span>
+                <span><b>Nature in motion</b><small>Dynamic framing and realistic sound</small></span>
               </button>
             </div>
           </div>
@@ -90,62 +92,70 @@
           <article class="result-card" id="result-card" hidden>
             <div class="result-heading">
               <div>
-                <span class="eyebrow">Son üretim</span>
-                <h2 id="result-title">Videon hazır</h2>
+                <span class="eyebrow">Latest generation</span>
+                <h2 id="result-title">Your video is ready</h2>
               </div>
               <a class="download-button" id="download-button" href="#" download target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14" /></svg>
-                İndir
+                Download
               </a>
             </div>
             <div class="video-frame">
               <video id="result-video" controls playsinline></video>
               <div class="video-loading" id="video-loading">
                 <span class="loader-ring"></span>
-                <b id="job-title">Video hazırlanıyor</b>
-                <span id="job-detail">İşlem sırası bekleniyor…</span>
+                <b id="job-title">Creating your video</b>
+                <span id="job-detail">Waiting for the generation queue…</span>
                 <div class="progress-track"><i id="progress-bar"></i></div>
                 <span class="elapsed" id="elapsed">00:00</span>
               </div>
             </div>
             <div class="result-meta" id="result-meta"></div>
             <details class="refined-prompt" id="refined-wrap" hidden>
-              <summary>İyileştirilmiş prompt</summary>
+              <summary>Enhanced prompt</summary>
               <p id="refined-text"></p>
             </details>
           </article>
         </section>
 
-        <section class="composer-dock" aria-label="Video oluşturma alanı">
+        <section class="composer-dock" aria-label="Video creation area">
           <div class="composer" id="composer">
-            <div class="attachment-previews" id="attachment-previews" hidden>
-              <div class="preview-item" id="first-preview" hidden>
-                <img alt="İlk kare önizlemesi" />
-                <span>İlk kare</span>
-                <button data-clear="first" aria-label="İlk kareyi kaldır">×</button>
+            <div class="composer-label-row">
+              <label for="prompt">Describe your video</label>
+              <span>Press Enter to create · Shift + Enter for a new line</span>
+            </div>
+            <textarea id="prompt" rows="2" placeholder="A close-up of wildflowers moving in a warm summer breeze…" aria-label="Video prompt"></textarea>
+            <div class="frame-slots" id="frame-slots" aria-label="Reference images">
+              <div class="frame-slot" id="first-slot" data-file="first" role="button" tabindex="0" aria-label="Add a start frame">
+                <span class="frame-visual" id="first-preview">
+                  <img alt="Start frame preview" hidden />
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 15l4-4 4 4 2-2 6 6M15.5 9h.01" /></svg>
+                </span>
+                <span class="frame-copy"><b>Start frame</b><small>Optional · click or drop an image</small></span>
+                <span class="frame-action">Add</span>
+                <button class="frame-remove" data-clear="first" type="button" aria-label="Remove start frame" hidden>×</button>
               </div>
-              <div class="preview-item" id="last-preview" hidden>
-                <img alt="Son kare önizlemesi" />
-                <span>Son kare</span>
-                <button data-clear="last" aria-label="Son kareyi kaldır">×</button>
+              <div class="frame-slot" id="last-slot" data-file="last" role="button" tabindex="0" aria-label="Add an end frame">
+                <span class="frame-visual" id="last-preview">
+                  <img alt="End frame preview" hidden />
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 15l4-4 4 4 2-2 6 6M15.5 9h.01" /></svg>
+                </span>
+                <span class="frame-copy"><b>End frame</b><small>Optional · guides the final shot</small></span>
+                <span class="frame-action">Add</span>
+                <button class="frame-remove" data-clear="last" type="button" aria-label="Remove end frame" hidden>×</button>
               </div>
             </div>
-            <textarea id="prompt" rows="2" placeholder="Videonu anlat…" aria-label="Video promptu"></textarea>
             <div class="composer-actions">
               <div class="composer-tools">
-                <button class="tool-button" id="attach-button" aria-label="Kare ekle">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20.5 11.5-8.9 8.9a6 6 0 0 1-8.5-8.5l9.6-9.6a4 4 0 0 1 5.7 5.7l-9.6 9.6a2 2 0 1 1-2.8-2.8l8.9-8.9" /></svg>
-                  <span>Kare ekle</span>
-                </button>
                 <button class="tool-button" id="settings-button" aria-expanded="false">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h7M15 18h5M14 4v4M6 10v4M11 16v4" /></svg>
-                  <span id="settings-summary">16:9 · 5 sn</span>
+                  <span id="settings-summary">16:9 · 5 sec</span>
                 </button>
               </div>
               <div class="generate-group">
-                <button class="stop-button" id="stop-button" hidden>Durdur</button>
-                <button class="generate-button" id="generate-button" aria-label="Video üret">
-                  <span>Üret</span>
+                <button class="stop-button" id="stop-button" hidden>Stop</button>
+                <button class="generate-button" id="generate-button" aria-label="Create video">
+                  <span>Create video</span>
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m0 0-5 5m5-5 5 5" /></svg>
                 </button>
               </div>
@@ -160,35 +170,30 @@
 
     <div class="popover settings-popover" id="settings-popover" hidden>
       <div class="popover-head">
-        <div><span class="eyebrow">Üretim ayarları</span><h3>Sahneyi yapılandır</h3></div>
-        <button class="icon-button" data-close="settings" aria-label="Ayarları kapat">
+        <div><span class="eyebrow">Generation settings</span><h3>Fine-tune your video</h3></div>
+        <button class="icon-button" data-close="settings" aria-label="Close settings">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
       </div>
       <label class="field">
-        <span>Kadraj</span>
+        <span>Frame size</span>
         <select id="canvas-select"></select>
       </label>
       <div class="field split-field">
-        <label><span>Süre <output id="duration-output">5 sn</output></span><input id="duration-range" type="range" min="2" max="14" value="5" /></label>
-        <label><span>Adım <output id="steps-output">6</output></span><input id="steps-range" type="range" min="2" max="40" value="6" /></label>
+        <label><span>Duration <output id="duration-output">5 sec</output></span><input id="duration-range" type="range" min="2" max="14" value="5" /></label>
+        <label><span>Quality steps <output id="steps-output">6</output></span><input id="steps-range" type="range" min="2" max="40" value="6" /></label>
       </div>
       <div class="field two-column">
-        <label><span>Üretim modu</span><select id="lora-select"><option value="larry">Hızlı · 6 adım</option><option value="lightx">Hızlı · 4 adım</option><option value="off">Standart</option></select></label>
-        <label><span>Seed</span><div class="seed-row"><input id="seed-input" type="number" value="42" step="1" /><button id="random-seed" aria-label="Rastgele seed">↻</button></div></label>
+        <label><span>Generation mode</span><select id="lora-select"><option value="larry">Fast · 6 steps</option><option value="lightx">Faster · 4 steps</option><option value="off">Standard</option></select></label>
+        <label><span>Seed</span><div class="seed-row"><input id="seed-input" type="number" value="42" step="1" /><button id="random-seed" aria-label="Random seed">↻</button></div></label>
       </div>
       <label class="toggle-row">
-        <span><b>Anlatımı iyileştir</b><small>İsteğini daha ayrıntılı hâle getirir.</small></span>
+        <span><b>Enhance prompt</b><small>Adds useful visual detail to your description.</small></span>
         <input id="upsample-input" type="checkbox" /><i aria-hidden="true"></i>
       </label>
     </div>
 
-    <div class="attachment-menu" id="attachment-menu" hidden>
-      <button data-file="first"><span>＋</span><b>İlk kare</b><small>Videonun başlangıç görüntüsü</small></button>
-      <button data-file="last"><span>→</span><b>Son kare</b><small>Videonun bitiş görüntüsü</small></button>
-    </div>
-
     <div class="toast" id="toast" role="status" hidden></div>
-    <script type="module" src="./app.js?v=20260919-5"></script>
+    <script type="module" src="./app.js?v=20260919-7"></script>
   </body>
 </html>

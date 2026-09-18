@@ -52,10 +52,10 @@ function truncate(value, length = 42) {
 
 function sanitizeServiceText(value) {
   return String(value || "")
-    .replace(/MiniMax(?:[-\s]?H?3)?(?:\s+Turbo)?/gi, "üretim sistemi")
-    .replace(/Hugging\s*Face/gi, "servis")
-    .replace(/ZeroGPU/gi, "öncelikli altyapı")
-    .replace(/\bSpace\b/gi, "sistem");
+    .replace(/MiniMax(?:[-\s]?H?3)?(?:\s+Turbo)?/gi, "generation system")
+    .replace(/Hugging\s*Face/gi, "service")
+    .replace(/ZeroGPU/gi, "priority infrastructure")
+    .replace(/\bSpace\b/gi, "system");
 }
 
 function openModal(id) {
@@ -70,17 +70,11 @@ function closeModal(id) {
 
 function positionFloatingPanels() {
   const settings = $("settings-popover");
-  const attach = $("attachment-menu");
   if (!settings.hidden && window.innerWidth > 660) {
     const rect = $("settings-button").getBoundingClientRect();
     settings.style.left = `${Math.min(rect.left, window.innerWidth - settings.offsetWidth - 18)}px`;
     settings.style.right = "auto";
     settings.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-  }
-  if (!attach.hidden && window.innerWidth > 660) {
-    const rect = $("attach-button").getBoundingClientRect();
-    attach.style.left = `${rect.left}px`;
-    attach.style.bottom = `${window.innerHeight - rect.top + 10}px`;
   }
 }
 
@@ -96,8 +90,8 @@ function canvasRatio(label) {
 }
 
 function refreshSettingsSummary() {
-  $("settings-summary").textContent = `${canvasRatio($("canvas-select").value)} · ${$("duration-range").value} sn`;
-  $("duration-output").textContent = `${$("duration-range").value} sn`;
+  $("settings-summary").textContent = `${canvasRatio($("canvas-select").value)} · ${$("duration-range").value} sec`;
+  $("duration-output").textContent = `${$("duration-range").value} sec`;
   $("steps-output").textContent = $("steps-range").value;
 }
 
@@ -143,7 +137,8 @@ function renderHistory() {
   const history = safeJson(localStorage.getItem(HISTORY_KEY), []);
   const list = $("history-list");
   if (!history.length) {
-    list.innerHTML = '<div class="history-empty">Ürettiğin videolar burada görünür.</div>';
+    list.innerHTML = '<div class="history-empty">Your generated videos will appear here.</div>';
+    renderAmbientReels(history);
     return;
   }
   list.innerHTML = "";
@@ -152,7 +147,7 @@ function renderHistory() {
     button.className = "history-item";
     button.innerHTML = `<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5z"/></svg></span><span><b></b><small></small></span>`;
     button.querySelector("b").textContent = truncate(item.prompt);
-    button.querySelector("small").textContent = new Date(item.createdAt).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    button.querySelector("small").textContent = new Date(item.createdAt).toLocaleString("en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
     button.addEventListener("click", () => {
       $("welcome").hidden = true;
       $("result-card").hidden = false;
@@ -166,24 +161,46 @@ function renderHistory() {
     });
     list.appendChild(button);
   }
+  renderAmbientReels(history);
+}
+
+function renderAmbientReels(history) {
+  const wall = $("ambient-reels");
+  if (!wall) return;
+  wall.innerHTML = "";
+  for (const item of history.slice(0, 3)) {
+    if (!item.url) continue;
+    const frame = document.createElement("div");
+    frame.className = "ambient-reel";
+    const video = document.createElement("video");
+    video.src = item.url;
+    video.muted = true;
+    video.loop = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+    frame.appendChild(video);
+    wall.appendChild(frame);
+  }
+  wall.hidden = !wall.childElementCount;
 }
 
 function readableError(error) {
   const raw = typeof error === "string" ? error : error?.message || String(error);
-  if (/quota|exceeded|GPU/i.test(raw)) return "Üretim kotası şu anda yeterli değil veya geçici olarak dolu.";
-  if (/queue.*full|503/i.test(raw)) return "İşlem kuyruğu şu anda dolu. Biraz sonra tekrar dene.";
-  if (/loading|starting|wake/i.test(raw)) return "Sistem hâlâ hazırlanıyor. Hazır olduğunda tekrar dene.";
-  if (/unauthorized|401|token/i.test(raw)) return "Bağlantı doğrulanamadı. Biraz sonra tekrar dene.";
+  if (/quota|exceeded|GPU/i.test(raw)) return "Generation capacity is temporarily full. Please try again soon.";
+  if (/queue.*full|503/i.test(raw)) return "The generation queue is full. Please try again in a few minutes.";
+  if (/loading|starting|wake/i.test(raw)) return "The system is still starting. Please try again when it is ready.";
+  if (/unauthorized|401|token/i.test(raw)) return "The connection could not be verified. Please try again soon.";
   return sanitizeServiceText(raw).slice(0, 360);
 }
 
 async function generateVideo() {
   const prompt = $("prompt").value.trim();
-  if (!prompt) { showToast("Önce videonu birkaç cümleyle anlat."); $("prompt").focus(); return; }
+  if (!prompt) { showToast("Describe your video before creating it."); $("prompt").focus(); return; }
   if (state.busy) return;
   state.stopped = false;
   setBusy(true);
-  showLoading("Video hazırlanıyor", "İsteğin sıraya alınıyor…");
+  showLoading("Creating your video", "Adding your request to the queue…");
   $("result-title").textContent = truncate(prompt, 58);
   state.startedAt = Date.now();
   state.timer = setInterval(() => {
@@ -204,10 +221,10 @@ async function generateVideo() {
 
     const createResponse = await fetch(`${API_ORIGIN}/jobs`, { method: "POST", body: form });
     const created = await createResponse.json().catch(() => ({}));
-    if (!createResponse.ok || !created.id) throw new Error(created.detail || "Üretim başlatılamadı.");
+    if (!createResponse.ok || !created.id) throw new Error(created.detail || "Generation could not be started.");
     state.jobId = created.id;
-    $("job-title").textContent = "Sırada bekliyor";
-    $("job-detail").textContent = "Öncelikli üretim kullanılıyor.";
+    $("job-title").textContent = "Waiting in queue";
+    $("job-detail").textContent = "Priority generation is enabled.";
     setProgress(22, true);
 
     let result = null;
@@ -215,32 +232,32 @@ async function generateVideo() {
       await new Promise((resolve) => setTimeout(resolve, 1800));
       const statusResponse = await fetch(`${API_ORIGIN}/jobs/${state.jobId}`, { cache: "no-store" });
       const status = await statusResponse.json().catch(() => ({}));
-      if (!statusResponse.ok) throw new Error(status.detail || "Üretim durumu alınamadı.");
+      if (!statusResponse.ok) throw new Error(status.detail || "Generation status could not be retrieved.");
       if (status.status === "queued") {
-        $("job-title").textContent = "Sırada bekliyor";
-        $("job-detail").textContent = "İsteğin güvenli üretim kuyruğunda.";
+        $("job-title").textContent = "Waiting in queue";
+        $("job-detail").textContent = "Your request is in the generation queue.";
         setProgress(24, true);
       } else if (status.status === "running") {
-        $("job-title").textContent = "Sahne üretiliyor";
-        $("job-detail").textContent = "Görüntü ve ses birlikte işleniyor…";
+        $("job-title").textContent = "Building your scene";
+        $("job-detail").textContent = "Rendering video and sound together…";
         const elapsed = (Date.now() - state.startedAt) / 1000;
         setProgress(Math.min(92, 34 + elapsed / 4), true);
       } else if (status.status === "done") {
         result = status;
         break;
       } else if (status.status === "cancelled") {
-        throw new Error("Üretim durduruldu.");
+        throw new Error("Generation was stopped.");
       } else if (status.status === "error") {
-        throw new Error(status.error || "Üretim başarısız oldu.");
+        throw new Error(status.error || "Generation failed.");
       }
     }
     if (state.stopped) return;
-    if (!result?.video_url) throw new Error("Video sonucu alınamadı.");
+    if (!result?.video_url) throw new Error("The generated video could not be retrieved.");
     const videoUrl = `${API_ORIGIN}${result.video_url}`;
     $("result-video").src = videoUrl;
     $("download-button").href = videoUrl;
     $("download-button").style.visibility = "visible";
-    const cleanReport = sanitizeServiceText(result.report || "Üretim tamamlandı.");
+    const cleanReport = sanitizeServiceText(result.report || "Generation complete.");
     $("result-meta").textContent = cleanReport;
     if (result.refined) {
       $("refined-text").textContent = sanitizeServiceText(result.refined);
@@ -249,10 +266,10 @@ async function generateVideo() {
     setProgress(100, false);
     $("video-loading").hidden = true;
     saveHistory(prompt, videoUrl, cleanReport);
-    showToast("Videon hazır.");
+    showToast("Your video is ready.");
   } catch (error) {
     if (state.stopped) return;
-    $("job-title").textContent = "Üretim tamamlanamadı";
+    $("job-title").textContent = "Generation could not be completed";
     $("job-detail").textContent = readableError(error);
     $("video-loading").hidden = false;
     $("video-loading").querySelector(".loader-ring").style.animation = "none";
@@ -268,8 +285,8 @@ async function stopGeneration() {
   if (!state.jobId) return;
   state.stopped = true;
   try { await fetch(`${API_ORIGIN}/jobs/${state.jobId}`, { method: "DELETE" }); } catch { /* best effort */ }
-  $("job-title").textContent = "Üretim durduruldu";
-  $("job-detail").textContent = "Yeni bir promptla tekrar deneyebilirsin.";
+  $("job-title").textContent = "Generation stopped";
+  $("job-detail").textContent = "You can try again with a new description.";
   setProgress(0, false);
   state.jobId = "";
   setBusy(false);
@@ -287,9 +304,9 @@ async function pollSpace() {
     const response = await fetch(`${API_ORIGIN}/health`, { cache: "no-store" });
     if (!response.ok) throw new Error();
     const info = await response.json();
-    setSpaceStatus(Boolean(info.ready), info.ready ? "Hazır" : "Hazırlanıyor", /failed/i.test(info.status || ""));
+    setSpaceStatus(Boolean(info.ready), info.ready ? "Ready" : "Starting", /failed/i.test(info.status || ""));
   } catch {
-    setSpaceStatus(false, "Bağlantı kurulamadı", true);
+    setSpaceStatus(false, "Offline", true);
   }
 }
 
@@ -311,23 +328,35 @@ async function loadConfig() {
 }
 
 function setFrame(kind, file) {
-  if (!file || !file.type.startsWith("image/")) { showToast("Lütfen bir görsel dosyası seç."); return; }
+  if (!file || !file.type.startsWith("image/")) { showToast("Choose an image file."); return; }
   const urlKey = `${kind}Url`;
   if (state[urlKey]) URL.revokeObjectURL(state[urlKey]);
   state[kind] = file;
   state[urlKey] = URL.createObjectURL(file);
+  const slot = $(`${kind}-slot`);
   const preview = $(`${kind}-preview`);
-  preview.querySelector("img").src = state[urlKey];
-  preview.hidden = false;
-  $("attachment-previews").hidden = false;
+  const image = preview.querySelector("img");
+  image.src = state[urlKey];
+  image.hidden = false;
+  preview.querySelector("svg").hidden = true;
+  slot.classList.add("has-image");
+  slot.querySelector(".frame-action").textContent = "Replace";
+  slot.querySelector("[data-clear]").hidden = false;
 }
 
 function clearFrame(kind) {
   if (state[`${kind}Url`]) URL.revokeObjectURL(state[`${kind}Url`]);
   state[kind] = null;
   state[`${kind}Url`] = "";
-  $(`${kind}-preview`).hidden = true;
-  $("attachment-previews").hidden = !state.first && !state.last;
+  const slot = $(`${kind}-slot`);
+  const preview = $(`${kind}-preview`);
+  const image = preview.querySelector("img");
+  image.removeAttribute("src");
+  image.hidden = true;
+  preview.querySelector("svg").hidden = false;
+  slot.classList.remove("has-image");
+  slot.querySelector(".frame-action").textContent = "Add";
+  slot.querySelector("[data-clear]").hidden = true;
   $(`${kind}-file`).value = "";
 }
 
@@ -362,25 +391,39 @@ function wireEvents() {
   $("settings-button").addEventListener("click", () => {
     const panel = $("settings-popover");
     panel.hidden = !panel.hidden;
-    $("attachment-menu").hidden = true;
     $("settings-button").setAttribute("aria-expanded", String(!panel.hidden));
     requestAnimationFrame(positionFloatingPanels);
   });
   document.querySelector('[data-close="settings"]').addEventListener("click", () => { $("settings-popover").hidden = true; });
-  $("attach-button").addEventListener("click", () => {
-    const menu = $("attachment-menu");
-    menu.hidden = !menu.hidden;
-    $("settings-popover").hidden = true;
-    requestAnimationFrame(positionFloatingPanels);
+  document.querySelectorAll("[data-file]").forEach((slot) => {
+    const openPicker = () => $(`${slot.dataset.file}-file`).click();
+    slot.addEventListener("click", (event) => {
+      if (!event.target.closest("[data-clear]")) openPicker();
+    });
+    slot.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openPicker();
+      }
+    });
+    slot.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      slot.classList.add("is-dragging");
+    });
+    slot.addEventListener("dragleave", () => slot.classList.remove("is-dragging"));
+    slot.addEventListener("drop", (event) => {
+      event.preventDefault();
+      slot.classList.remove("is-dragging");
+      setFrame(slot.dataset.file, event.dataTransfer.files[0]);
+    });
   });
-  document.querySelectorAll("[data-file]").forEach((button) => button.addEventListener("click", () => {
-    $(`${button.dataset.file}-file`).click();
-    $("attachment-menu").hidden = true;
-  }));
   ["first", "last"].forEach((kind) => {
     $(`${kind}-file`).addEventListener("change", (event) => setFrame(kind, event.target.files[0]));
   });
-  document.querySelectorAll("[data-clear]").forEach((button) => button.addEventListener("click", () => clearFrame(button.dataset.clear)));
+  document.querySelectorAll("[data-clear]").forEach((button) => button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    clearFrame(button.dataset.clear);
+  }));
   ["canvas-select", "duration-range", "steps-range"].forEach((id) => $(id).addEventListener("input", refreshSettingsSummary));
   $("lora-select").addEventListener("change", () => {
     const suggested = { larry: 6, lightx: 4, off: 28 }[$("lora-select").value];
@@ -396,9 +439,6 @@ function wireEvents() {
     if (!$("settings-popover").hidden && !$("settings-popover").contains(event.target) && !$("settings-button").contains(event.target)) {
       $("settings-popover").hidden = true;
       $("settings-button").setAttribute("aria-expanded", "false");
-    }
-    if (!$("attachment-menu").hidden && !$("attachment-menu").contains(event.target) && !$("attach-button").contains(event.target)) {
-      $("attachment-menu").hidden = true;
     }
   });
 }

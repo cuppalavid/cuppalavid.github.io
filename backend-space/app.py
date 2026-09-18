@@ -60,7 +60,7 @@ def enforce_rate_limit(ip: str) -> None:
     while bucket and bucket[0] < cutoff:
         bucket.popleft()
     if len(bucket) >= MAX_JOBS_PER_HOUR:
-        raise HTTPException(status_code=429, detail="Saatlik üretim sınırına ulaşıldı.")
+        raise HTTPException(status_code=429, detail="The hourly generation limit has been reached.")
     bucket.append(now())
 
 
@@ -78,10 +78,10 @@ async def save_upload(upload: UploadFile | None, destination: Path) -> str | Non
     if upload is None or not upload.filename:
         return None
     if not (upload.content_type or "").startswith("image/"):
-        raise HTTPException(status_code=400, detail="Yalnızca görsel dosyaları kabul edilir.")
+        raise HTTPException(status_code=400, detail="Only image files are accepted.")
     data = await upload.read(MAX_UPLOAD_BYTES + 1)
     if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="Görsel dosyası 15 MB sınırını aşıyor.")
+        raise HTTPException(status_code=413, detail="The image exceeds the 15 MB size limit.")
     suffix = Path(upload.filename).suffix.lower()[:10] or ".img"
     path = destination.with_suffix(suffix)
     path.write_bytes(data)
@@ -111,7 +111,7 @@ def run_generation(job_id: str, payload: dict[str, Any]) -> None:
     token = os.environ.get("HF_TOKEN", "").strip()
     if not token:
         with lock:
-            jobs[job_id].update(status="error", error="Sunucu anahtarı yapılandırılmamış.", finished_at=now())
+            jobs[job_id].update(status="error", error="The server key is not configured.", finished_at=now())
         return
 
     with lock:
@@ -145,7 +145,7 @@ def run_generation(job_id: str, payload: dict[str, Any]) -> None:
         parts = unwrap_result(result)
         source = video_path_from(parts[0] if parts else None)
         if not source:
-            raise RuntimeError("Video dosyası alınamadı.")
+            raise RuntimeError("The generated video could not be retrieved.")
         output_path = WORK_ROOT / job_id / f"result{Path(source).suffix or '.mp4'}"
         shutil.copyfile(source, output_path)
         with lock:
@@ -155,7 +155,7 @@ def run_generation(job_id: str, payload: dict[str, Any]) -> None:
                 jobs[job_id].update(
                     status="done",
                     video_path=str(output_path),
-                    report=str(parts[1]) if len(parts) > 1 and parts[1] else "Üretim tamamlandı.",
+                    report=str(parts[1]) if len(parts) > 1 and parts[1] else "Generation complete.",
                     refined=str(parts[2]) if len(parts) > 2 and parts[2] else "",
                     finished_at=now(),
                 )
@@ -198,15 +198,15 @@ async def create_job(
     cleanup_old_jobs()
     clean_prompt = prompt.strip()
     if not clean_prompt or len(clean_prompt) > 4000:
-        raise HTTPException(status_code=400, detail="İstek 1–4000 karakter olmalıdır.")
+        raise HTTPException(status_code=400, detail="The prompt must be between 1 and 4,000 characters.")
     if duration < 2 or duration > 14 or steps < 2 or steps > 40:
-        raise HTTPException(status_code=400, detail="Üretim ayarları geçersiz.")
+        raise HTTPException(status_code=400, detail="The generation settings are invalid.")
     if lora not in {"larry", "lightx", "off"}:
-        raise HTTPException(status_code=400, detail="Üretim modu geçersiz.")
+        raise HTTPException(status_code=400, detail="The generation mode is invalid.")
     with lock:
         active = sum(job.get("status") in {"queued", "running"} for job in jobs.values())
         if active >= MAX_QUEUED_JOBS:
-            raise HTTPException(status_code=503, detail="İşlem kuyruğu dolu.")
+            raise HTTPException(status_code=503, detail="The generation queue is full.")
         enforce_rate_limit(client_ip(request))
 
     job_id = uuid.uuid4().hex
@@ -237,7 +237,7 @@ def get_job(request: Request, job_id: str) -> dict[str, Any]:
     with lock:
         job = jobs.get(job_id)
         if not job:
-            raise HTTPException(status_code=404, detail="İş bulunamadı.")
+            raise HTTPException(status_code=404, detail="Job not found.")
         response = {key: job.get(key) for key in ("status", "error", "report", "refined") if job.get(key) is not None}
         if job.get("status") == "done":
             response["video_url"] = f"/jobs/{job_id}/video"
@@ -251,7 +251,7 @@ def get_video(request: Request, job_id: str):
         job = jobs.get(job_id)
         path = job.get("video_path") if job else None
     if not path or not Path(path).exists():
-        raise HTTPException(status_code=404, detail="Video bulunamadı.")
+        raise HTTPException(status_code=404, detail="Video not found.")
     return FileResponse(path, media_type="video/mp4", filename=f"cuppalavid-{job_id[:8]}.mp4")
 
 
@@ -261,7 +261,7 @@ def cancel_job(request: Request, job_id: str) -> dict[str, str]:
     with lock:
         job = jobs.get(job_id)
         if not job:
-            raise HTTPException(status_code=404, detail="İş bulunamadı.")
+            raise HTTPException(status_code=404, detail="Job not found.")
         job["cancelled"] = True
         remote_job = job.get("remote_job")
         if remote_job:
