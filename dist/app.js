@@ -61,6 +61,14 @@ function truncate(value, length = 42) {
   return value.length > length ? `${value.slice(0, length).trim()}…` : value;
 }
 
+function sanitizeServiceText(value) {
+  return String(value || "")
+    .replace(/MiniMax(?:[-\s]?H?3)?(?:\s+Turbo)?/gi, "üretim sistemi")
+    .replace(/Hugging\s*Face/gi, "servis")
+    .replace(/ZeroGPU/gi, "öncelikli altyapı")
+    .replace(/\bSpace\b/gi, "sistem");
+}
+
 function openModal(id) {
   $(id).hidden = false;
   document.body.style.overflow = "hidden";
@@ -173,7 +181,7 @@ function renderHistory() {
       $("result-video").src = item.url;
       $("download-button").href = item.url;
       $("download-button").style.visibility = "visible";
-      $("result-meta").textContent = item.report || item.prompt;
+      $("result-meta").textContent = sanitizeServiceText(item.report || item.prompt);
       $("result-title").textContent = truncate(item.prompt, 54);
       if (window.innerWidth <= 900) closeSidebar();
     });
@@ -183,15 +191,9 @@ function renderHistory() {
 
 function setUser(user) {
   state.user = user;
-  const avatarValue = user?.avatarUrl || user?.picture || user?.avatar_url || "";
-  const avatar = avatarValue.startsWith("/") ? `https://huggingface.co${avatarValue}` : avatarValue;
-  const avatarMarkup = avatar ? `<img src="${avatar}" alt="" />` : "HF";
-  $("account-avatar").innerHTML = avatar ? avatarMarkup : "HF";
 }
 
-function setDefaultApiIdentity() {
-  $("account-avatar").innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 21a7.5 7.5 0 0 1 15 0" /></svg>';
-}
+function setDefaultApiIdentity() {}
 
 function clearUser() {
   state.token = "";
@@ -218,8 +220,8 @@ async function getClient() {
     events: ["data", "status", "log"],
     record_history: false,
     status_callback: (status) => {
-      if (status?.status === "running") setSpaceStatus(true, "Space hazır");
-      else if (status?.message) setSpaceStatus(false, status.message);
+      if (status?.status === "running") setSpaceStatus(true, "Hazır");
+      else if (status?.message) setSpaceStatus(false, "Hazırlanıyor");
     }
   });
   return state.client;
@@ -233,11 +235,11 @@ function unwrapResult(data) {
 
 function readableError(error) {
   const raw = typeof error === "string" ? error : error?.message || String(error);
-  if (/quota|exceeded|GPU/i.test(raw)) return "Hugging Face GPU kotası bu üretim için yeterli değil veya geçici olarak dolu.";
-  if (/queue.*full|503/i.test(raw)) return "Space kuyruğu şu anda dolu. Biraz sonra tekrar dene.";
-  if (/loading|starting|wake/i.test(raw)) return "Model hâlâ hazırlanıyor. Space hazır olduğunda tekrar dene.";
-  if (/unauthorized|401|token/i.test(raw)) return "Hugging Face Space bağlantısı doğrulanamadı. Biraz sonra tekrar dene.";
-  return raw.slice(0, 360);
+  if (/quota|exceeded|GPU/i.test(raw)) return "Üretim kotası şu anda yeterli değil veya geçici olarak dolu.";
+  if (/queue.*full|503/i.test(raw)) return "İşlem kuyruğu şu anda dolu. Biraz sonra tekrar dene.";
+  if (/loading|starting|wake/i.test(raw)) return "Sistem hâlâ hazırlanıyor. Hazır olduğunda tekrar dene.";
+  if (/unauthorized|401|token/i.test(raw)) return "Bağlantı doğrulanamadı. Biraz sonra tekrar dene.";
+  return sanitizeServiceText(raw).slice(0, 360);
 }
 
 async function generateVideo() {
@@ -245,7 +247,7 @@ async function generateVideo() {
   if (!prompt) { showToast("Önce videonu birkaç cümleyle anlat."); $("prompt").focus(); return; }
   if (state.busy) return;
   setBusy(true);
-  showLoading("Video hazırlanıyor", "MiniMax H3 isteği sıraya alınıyor…");
+  showLoading("Video hazırlanıyor", "İsteğin sıraya alınıyor…");
   $("result-title").textContent = truncate(prompt, 58);
   state.startedAt = Date.now();
   state.timer = setInterval(() => {
@@ -272,7 +274,7 @@ async function generateVideo() {
       if (message.type === "status") {
         if (message.stage === "pending") {
           $("job-title").textContent = message.position != null ? `Sırada ${message.position + 1}.` : "Sırada bekliyor";
-          $("job-detail").textContent = state.token ? "Pro hesabının ZeroGPU önceliği kullanılıyor." : "Video isteği sıraya alındı.";
+          $("job-detail").textContent = state.token ? "Öncelikli üretim kullanılıyor." : "Video isteği sıraya alındı.";
           setProgress(22, true);
         } else if (message.stage === "generating" || message.stage === "streaming") {
           $("job-title").textContent = "Sahne üretiliyor";
@@ -286,21 +288,22 @@ async function generateVideo() {
         finalData = message.data;
       }
     }
-    if (!finalData) throw new Error("Space bir video sonucu döndürmedi.");
+    if (!finalData) throw new Error("Video sonucu alınamadı.");
     const [video, report, refined] = unwrapResult(finalData);
     const videoUrl = resolveVideoUrl(video);
     if (!videoUrl) throw new Error("Video dosyasının adresi alınamadı.");
     $("result-video").src = videoUrl;
     $("download-button").href = videoUrl;
     $("download-button").style.visibility = "visible";
-    $("result-meta").textContent = report || "Üretim tamamlandı.";
+    const cleanReport = sanitizeServiceText(report || "Üretim tamamlandı.");
+    $("result-meta").textContent = cleanReport;
     if (refined) {
-      $("refined-text").textContent = refined;
+      $("refined-text").textContent = sanitizeServiceText(refined);
       $("refined-wrap").hidden = false;
     }
     setProgress(100, false);
     $("video-loading").hidden = true;
-    saveHistory(prompt, videoUrl, report || "");
+    saveHistory(prompt, videoUrl, cleanReport);
     showToast("Videon hazır.");
   } catch (error) {
     $("job-title").textContent = "Üretim tamamlanamadı";
@@ -337,9 +340,9 @@ async function pollSpace() {
     const response = await fetch(`${SPACE_ORIGIN}/status`);
     if (!response.ok) throw new Error();
     const info = await response.json();
-    setSpaceStatus(Boolean(info.ready), info.ready ? "Space hazır" : "Model hazırlanıyor", /failed/i.test(info.status || ""));
+    setSpaceStatus(Boolean(info.ready), info.ready ? "Hazır" : "Hazırlanıyor", /failed/i.test(info.status || ""));
   } catch {
-    setSpaceStatus(false, "Space’e ulaşılamadı", true);
+    setSpaceStatus(false, "Bağlantı kurulamadı", true);
   }
 }
 

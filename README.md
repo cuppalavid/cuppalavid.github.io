@@ -1,6 +1,6 @@
 # Cuppalavid
 
-MiniMax H3 Turbo Hugging Face Space API'sini kullanan, tamamen statik bir video üretim arayüzü.
+Yapay zekâ destekli, tamamen statik bir video üretim arayüzü.
 
 ## Güvenlik
 
