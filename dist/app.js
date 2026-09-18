@@ -238,7 +238,7 @@ async function beginOAuth() {
   const oauthState = base64Url(crypto.getRandomValues(new Uint8Array(24)));
   sessionStorage.setItem(OAUTH_VERIFIER_KEY, verifier);
   sessionStorage.setItem(OAUTH_STATE_KEY, oauthState);
-  const clientId = `${window.location.origin}/.well-known/oauth-cimd`;
+  const clientId = `${window.location.origin}/.well-known/oauth-cimd/`;
   const redirectUri = `${window.location.origin}/`;
   const params = new URLSearchParams({
     client_id: clientId,
@@ -271,7 +271,7 @@ async function completeOAuthIfPresent() {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    client_id: `${window.location.origin}/.well-known/oauth-cimd`,
+    client_id: `${window.location.origin}/.well-known/oauth-cimd/`,
     redirect_uri: `${window.location.origin}/`,
     code_verifier: verifier,
   });
