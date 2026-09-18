@@ -181,7 +181,8 @@ function setUser(user) {
   state.user = user;
   const name = user?.fullname || user?.name || user?.preferred_username || user?.username || "Hugging Face";
   const username = user?.name || user?.preferred_username || user?.username || "bağlı";
-  const avatar = user?.avatarUrl || user?.picture || user?.avatar_url || "";
+  const avatarValue = user?.avatarUrl || user?.picture || user?.avatar_url || "";
+  const avatar = avatarValue.startsWith("/") ? `https://huggingface.co${avatarValue}` : avatarValue;
   $("account-title").textContent = name;
   $("profile-detail").textContent = `${user?.isPro ? "Pro hesap" : "Hugging Face hesabı"} · @${username}`;
   const avatarMarkup = avatar ? `<img src="${avatar}" alt="" />` : "HF";
