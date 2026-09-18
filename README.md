@@ -5,8 +5,8 @@ MiniMax H3 Turbo Hugging Face Space API'sini kullanan, tamamen statik bir video 
 ## Güvenlik
 
 - Hugging Face OAuth, Authorization Code + PKCE akışını kullanır.
-- OAuth erişim anahtarı yalnızca `sessionStorage` içinde, açık tarayıcı sekmesi boyunca tutulur.
-- İlk üretimde hesap bağlantısı otomatik açılır; erişim anahtarı yalnızca sekme belleğinde saklanır.
+- OAuth erişim anahtarı yalnızca kullanıcının tarayıcısındaki `localStorage` alanında tutulur; GitHub kaynak koduna veya build çıktısına yazılmaz.
+- İlk bağlantıdan sonra aynı tarayıcıdaki yeni sekmeler Pro hesabı otomatik kullanır. Kullanıcı “Bağlantıyı kes” dediğinde anahtar silinir.
 - Site kaynak kodunda kullanıcı anahtarı veya sunucu sırrı bulunmaz.
 
 ## Yayın

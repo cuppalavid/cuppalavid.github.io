@@ -2,7 +2,7 @@ import { Client, handle_file } from "https://cdn.jsdelivr.net/npm/@gradio/client
 
 const SPACE_ID = "Pepe104/MiniMax-H3-Turbo-Lora-UNCENSORED";
 const SPACE_ORIGIN = "https://pepe104-minimax-h3-turbo-lora-uncensored.hf.space";
-const SESSION_TOKEN_KEY = "cuppalavid_hf_token";
+const PERSISTENT_TOKEN_KEY = "cuppalavid_hf_token";
 const OAUTH_STATE_KEY = "cuppalavid_oauth_state";
 const OAUTH_VERIFIER_KEY = "cuppalavid_oauth_verifier";
 const HISTORY_KEY = "cuppalavid_history_v1";
@@ -15,8 +15,14 @@ const DEFAULT_CANVASES = [
 ];
 
 const $ = (id) => document.getElementById(id);
+const storedToken = localStorage.getItem(PERSISTENT_TOKEN_KEY) || sessionStorage.getItem(PERSISTENT_TOKEN_KEY) || "";
+if (storedToken) {
+  localStorage.setItem(PERSISTENT_TOKEN_KEY, storedToken);
+  sessionStorage.removeItem(PERSISTENT_TOKEN_KEY);
+}
+
 const state = {
-  token: sessionStorage.getItem(SESSION_TOKEN_KEY) || "",
+  token: storedToken,
   user: null,
   first: null,
   last: null,
@@ -195,7 +201,8 @@ function clearUser() {
   state.user = null;
   state.client?.close?.();
   state.client = null;
-  sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  localStorage.removeItem(PERSISTENT_TOKEN_KEY);
+  sessionStorage.removeItem(PERSISTENT_TOKEN_KEY);
   $("account-avatar").innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 21a7.5 7.5 0 0 1 15 0" /></svg>';
 }
 
@@ -213,7 +220,8 @@ async function connectWithToken(token) {
   const user = await verifyToken(clean);
   state.token = clean;
   state.client = null;
-  sessionStorage.setItem(SESSION_TOKEN_KEY, clean);
+  localStorage.setItem(PERSISTENT_TOKEN_KEY, clean);
+  sessionStorage.removeItem(PERSISTENT_TOKEN_KEY);
   setUser(user);
   return user;
 }
