@@ -1,8 +1,5 @@
-import { Client, handle_file } from "https://cdn.jsdelivr.net/npm/@gradio/client@2.7.0/dist/index.min.js";
-
-const SPACE_ID = "Pepe104/MiniMax-H3-Turbo-Lora-UNCENSORED";
 const SPACE_ORIGIN = "https://pepe104-minimax-h3-turbo-lora-uncensored.hf.space";
-const PERSISTENT_TOKEN_KEY = "cuppalavid_hf_token";
+const API_ORIGIN = "https://anil465423-cuppalavid-api.hf.space";
 const HISTORY_KEY = "cuppalavid_history_v1";
 
 const DEFAULT_CANVASES = [
@@ -13,21 +10,13 @@ const DEFAULT_CANVASES = [
 ];
 
 const $ = (id) => document.getElementById(id);
-const storedToken = localStorage.getItem(PERSISTENT_TOKEN_KEY) || sessionStorage.getItem(PERSISTENT_TOKEN_KEY) || "";
-if (storedToken) {
-  localStorage.setItem(PERSISTENT_TOKEN_KEY, storedToken);
-  sessionStorage.removeItem(PERSISTENT_TOKEN_KEY);
-}
-
 const state = {
-  token: storedToken,
-  user: null,
   first: null,
   last: null,
   firstUrl: "",
   lastUrl: "",
-  client: null,
-  submission: null,
+  jobId: "",
+  stopped: false,
   busy: false,
   timer: null,
   startedAt: 0,
@@ -143,16 +132,6 @@ function setBusy(busy) {
   }
 }
 
-function resolveVideoUrl(video) {
-  if (!video) return "";
-  if (typeof video === "string") {
-    return video.startsWith("http") ? video : `${SPACE_ORIGIN}/gradio_api/file=${video}`;
-  }
-  if (video.url) return video.url;
-  if (video.path) return `${SPACE_ORIGIN}/gradio_api/file=${video.path}`;
-  return "";
-}
-
 function saveHistory(prompt, url, report) {
   const history = safeJson(localStorage.getItem(HISTORY_KEY), []);
   history.unshift({ prompt, url, report, createdAt: Date.now() });
@@ -189,50 +168,6 @@ function renderHistory() {
   }
 }
 
-function setUser(user) {
-  state.user = user;
-}
-
-function setDefaultApiIdentity() {}
-
-function clearUser() {
-  state.token = "";
-  state.user = null;
-  state.client?.close?.();
-  state.client = null;
-  localStorage.removeItem(PERSISTENT_TOKEN_KEY);
-  sessionStorage.removeItem(PERSISTENT_TOKEN_KEY);
-  setDefaultApiIdentity();
-}
-
-async function verifyToken(token) {
-  const response = await fetch("https://huggingface.co/api/whoami-v2", {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  if (!response.ok) throw new Error("Hesap doğrulanamadı. Token veya oturum izni geçersiz olabilir.");
-  return response.json();
-}
-
-async function getClient() {
-  if (state.client) return state.client;
-  state.client = await Client.connect(SPACE_ID, {
-    ...(state.token ? { token: state.token } : {}),
-    events: ["data", "status", "log"],
-    record_history: false,
-    status_callback: (status) => {
-      if (status?.status === "running") setSpaceStatus(true, "Hazır");
-      else if (status?.message) setSpaceStatus(false, "Hazırlanıyor");
-    }
-  });
-  return state.client;
-}
-
-function unwrapResult(data) {
-  let value = data;
-  if (Array.isArray(value) && value.length === 1 && Array.isArray(value[0])) value = value[0];
-  return Array.isArray(value) ? value : [value];
-}
-
 function readableError(error) {
   const raw = typeof error === "string" ? error : error?.message || String(error);
   if (/quota|exceeded|GPU/i.test(raw)) return "Üretim kotası şu anda yeterli değil veya geçici olarak dolu.";
@@ -246,6 +181,7 @@ async function generateVideo() {
   const prompt = $("prompt").value.trim();
   if (!prompt) { showToast("Önce videonu birkaç cümleyle anlat."); $("prompt").focus(); return; }
   if (state.busy) return;
+  state.stopped = false;
   setBusy(true);
   showLoading("Video hazırlanıyor", "İsteğin sıraya alınıyor…");
   $("result-title").textContent = truncate(prompt, 58);
@@ -255,50 +191,59 @@ async function generateVideo() {
   }, 500);
 
   try {
-    const client = await getClient();
-    const submission = client.submit("/generate", {
-      prompt,
-      image_path: state.first ? handle_file(state.first) : null,
-      last_image_path: state.last ? handle_file(state.last) : null,
-      canvas: $("canvas-select").value,
-      duration: Number($("duration-range").value),
-      steps: Number($("steps-range").value),
-      seed: Number($("seed-input").value),
-      upsample: $("upsample-input").checked,
-      use_lora: $("lora-select").value !== "off",
-      lora: $("lora-select").value,
-    });
-    state.submission = submission;
-    let finalData = null;
-    for await (const message of submission) {
-      if (message.type === "status") {
-        if (message.stage === "pending") {
-          $("job-title").textContent = message.position != null ? `Sırada ${message.position + 1}.` : "Sırada bekliyor";
-          $("job-detail").textContent = state.token ? "Öncelikli üretim kullanılıyor." : "Video isteği sıraya alındı.";
-          setProgress(22, true);
-        } else if (message.stage === "generating" || message.stage === "streaming") {
-          $("job-title").textContent = "Sahne üretiliyor";
-          $("job-detail").textContent = message.eta ? `Yaklaşık ${Math.ceil(message.eta)} saniye kaldı` : "Görüntü ve ses birlikte işleniyor…";
-          const elapsed = (Date.now() - state.startedAt) / 1000;
-          setProgress(message.eta ? Math.min(92, 28 + (64 * elapsed / (elapsed + message.eta))) : 48, !message.eta);
-        } else if (message.stage === "error") {
-          throw new Error(typeof message.message === "string" ? message.message : "Üretim başarısız oldu.");
-        }
-      } else if (message.type === "data") {
-        finalData = message.data;
+    const form = new FormData();
+    form.append("prompt", prompt);
+    form.append("canvas", $("canvas-select").value);
+    form.append("duration", $("duration-range").value);
+    form.append("steps", $("steps-range").value);
+    form.append("seed", $("seed-input").value);
+    form.append("upsample", String($("upsample-input").checked));
+    form.append("lora", $("lora-select").value);
+    if (state.first) form.append("first_image", state.first, state.first.name);
+    if (state.last) form.append("last_image", state.last, state.last.name);
+
+    const createResponse = await fetch(`${API_ORIGIN}/jobs`, { method: "POST", body: form });
+    const created = await createResponse.json().catch(() => ({}));
+    if (!createResponse.ok || !created.id) throw new Error(created.detail || "Üretim başlatılamadı.");
+    state.jobId = created.id;
+    $("job-title").textContent = "Sırada bekliyor";
+    $("job-detail").textContent = "Öncelikli üretim kullanılıyor.";
+    setProgress(22, true);
+
+    let result = null;
+    while (!state.stopped) {
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+      const statusResponse = await fetch(`${API_ORIGIN}/jobs/${state.jobId}`, { cache: "no-store" });
+      const status = await statusResponse.json().catch(() => ({}));
+      if (!statusResponse.ok) throw new Error(status.detail || "Üretim durumu alınamadı.");
+      if (status.status === "queued") {
+        $("job-title").textContent = "Sırada bekliyor";
+        $("job-detail").textContent = "İsteğin güvenli üretim kuyruğunda.";
+        setProgress(24, true);
+      } else if (status.status === "running") {
+        $("job-title").textContent = "Sahne üretiliyor";
+        $("job-detail").textContent = "Görüntü ve ses birlikte işleniyor…";
+        const elapsed = (Date.now() - state.startedAt) / 1000;
+        setProgress(Math.min(92, 34 + elapsed / 4), true);
+      } else if (status.status === "done") {
+        result = status;
+        break;
+      } else if (status.status === "cancelled") {
+        throw new Error("Üretim durduruldu.");
+      } else if (status.status === "error") {
+        throw new Error(status.error || "Üretim başarısız oldu.");
       }
     }
-    if (!finalData) throw new Error("Video sonucu alınamadı.");
-    const [video, report, refined] = unwrapResult(finalData);
-    const videoUrl = resolveVideoUrl(video);
-    if (!videoUrl) throw new Error("Video dosyasının adresi alınamadı.");
+    if (state.stopped) return;
+    if (!result?.video_url) throw new Error("Video sonucu alınamadı.");
+    const videoUrl = `${API_ORIGIN}${result.video_url}`;
     $("result-video").src = videoUrl;
     $("download-button").href = videoUrl;
     $("download-button").style.visibility = "visible";
-    const cleanReport = sanitizeServiceText(report || "Üretim tamamlandı.");
+    const cleanReport = sanitizeServiceText(result.report || "Üretim tamamlandı.");
     $("result-meta").textContent = cleanReport;
-    if (refined) {
-      $("refined-text").textContent = sanitizeServiceText(refined);
+    if (result.refined) {
+      $("refined-text").textContent = sanitizeServiceText(result.refined);
       $("refined-wrap").hidden = false;
     }
     setProgress(100, false);
@@ -306,6 +251,7 @@ async function generateVideo() {
     saveHistory(prompt, videoUrl, cleanReport);
     showToast("Videon hazır.");
   } catch (error) {
+    if (state.stopped) return;
     $("job-title").textContent = "Üretim tamamlanamadı";
     $("job-detail").textContent = readableError(error);
     $("video-loading").hidden = false;
@@ -313,18 +259,19 @@ async function generateVideo() {
     $("video-loading").querySelector(".loader-ring").style.borderColor = "rgba(255,120,120,.55)";
     setProgress(0, false);
   } finally {
-    state.submission = null;
+    state.jobId = "";
     setBusy(false);
   }
 }
 
 async function stopGeneration() {
-  if (!state.submission) return;
-  try { await state.submission.cancel(); } catch { /* queue may already be closing */ }
+  if (!state.jobId) return;
+  state.stopped = true;
+  try { await fetch(`${API_ORIGIN}/jobs/${state.jobId}`, { method: "DELETE" }); } catch { /* best effort */ }
   $("job-title").textContent = "Üretim durduruldu";
   $("job-detail").textContent = "Yeni bir promptla tekrar deneyebilirsin.";
   setProgress(0, false);
-  state.submission = null;
+  state.jobId = "";
   setBusy(false);
 }
 
@@ -337,7 +284,7 @@ function setSpaceStatus(ready, text, error = false) {
 
 async function pollSpace() {
   try {
-    const response = await fetch(`${SPACE_ORIGIN}/status`);
+    const response = await fetch(`${API_ORIGIN}/health`, { cache: "no-store" });
     if (!response.ok) throw new Error();
     const info = await response.json();
     setSpaceStatus(Boolean(info.ready), info.ready ? "Hazır" : "Hazırlanıyor", /failed/i.test(info.status || ""));
@@ -458,16 +405,9 @@ function wireEvents() {
 
 async function initialize() {
   wireEvents();
-  setDefaultApiIdentity();
   renderHistory();
   await Promise.allSettled([loadConfig(), pollSpace()]);
   setInterval(pollSpace, 30000);
-  try {
-    if (state.token) setUser(await verifyToken(state.token));
-  } catch (error) {
-    clearUser();
-    showToast(readableError(error));
-  }
 }
 
 initialize();

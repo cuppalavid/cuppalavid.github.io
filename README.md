@@ -4,11 +4,13 @@ Yapay zekâ destekli, tamamen statik bir video üretim arayüzü.
 
 ## Güvenlik
 
-- Daha önce yetkilendirilmiş Hugging Face erişim anahtarı yalnızca kullanıcının tarayıcısındaki `localStorage` alanında tutulur; GitHub kaynak koduna veya build çıktısına yazılmaz.
-- İlk bağlantıdan sonra aynı tarayıcıdaki yeni sekmeler Pro hesabı otomatik kullanır. Kullanıcı “Bağlantıyı kes” dediğinde anahtar silinir.
-- Sağ üstteki hesap görseli tıklanabilir değildir ve giriş sayfası açmaz. Kayıtlı Pro bağlantısı yoksa uygulama giriş istemeden Space'in genel API erişimini kullanır.
-- Site kaynak kodunda kullanıcı anahtarı veya sunucu sırrı bulunmaz.
+- Tarayıcıya Hugging Face anahtarı gönderilmez ve GitHub kaynak kodunda sunucu sırrı bulunmaz.
+- Üretim istekleri, kaynak kodu korumalı `Anil465423/cuppalavid-api` Space'i üzerinden iletilir.
+- Pro çalışma anahtarı yalnızca Space'in `HF_TOKEN` gizli değişkeninde tutulur.
+- Aracı servis IP başına saatte 5 üretim, 12 bekleyen iş ve tek eşzamanlı üretim sınırı uygular.
 
 ## Yayın
 
 GitHub Pages çıktısı `dist/` klasöründedir.
+
+Aracı servis kaynakları `backend-space/` klasöründedir.
