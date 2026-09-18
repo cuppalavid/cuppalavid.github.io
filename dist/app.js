@@ -183,24 +183,14 @@ function renderHistory() {
 
 function setUser(user) {
   state.user = user;
-  const name = user?.fullname || user?.name || user?.preferred_username || user?.username || "Hugging Face";
-  const username = user?.name || user?.preferred_username || user?.username || "bağlı";
   const avatarValue = user?.avatarUrl || user?.picture || user?.avatar_url || "";
   const avatar = avatarValue.startsWith("/") ? `https://huggingface.co${avatarValue}` : avatarValue;
-  $("account-title").textContent = name;
-  $("profile-detail").textContent = `${user?.isPro ? "Pro hesap" : "Hugging Face hesabı"} · @${username}`;
   const avatarMarkup = avatar ? `<img src="${avatar}" alt="" />` : "HF";
   $("account-avatar").innerHTML = avatar ? avatarMarkup : "HF";
-  $("profile-avatar").innerHTML = avatarMarkup;
-  $("logout-button").hidden = false;
 }
 
 function setDefaultApiIdentity() {
-  $("account-title").textContent = "MiniMax H3 Turbo";
-  $("profile-detail").textContent = "API hazır";
   $("account-avatar").innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 21a7.5 7.5 0 0 1 15 0" /></svg>';
-  $("profile-avatar").textContent = "H3";
-  $("logout-button").hidden = true;
 }
 
 function clearUser() {
@@ -448,10 +438,6 @@ function wireEvents() {
     refreshSettingsSummary();
   });
   $("random-seed").addEventListener("click", () => { $("seed-input").value = Math.floor(Math.random() * 2147483647); });
-  $("account-button").addEventListener("click", () => openModal("account-modal"));
-  document.querySelector('[data-close="account"]').addEventListener("click", () => closeModal("account-modal"));
-  $("account-modal").addEventListener("click", (event) => { if (event.target === $("account-modal")) closeModal("account-modal"); });
-  $("logout-button").addEventListener("click", () => { clearUser(); closeModal("account-modal"); showToast("Hugging Face bağlantısı kesildi."); });
   $("menu-button").addEventListener("click", () => { $("sidebar").classList.add("open"); $("sidebar-scrim").classList.add("open"); });
   $("sidebar-close").addEventListener("click", closeSidebar);
   $("sidebar-scrim").addEventListener("click", closeSidebar);

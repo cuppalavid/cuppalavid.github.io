@@ -73,11 +73,11 @@
               <span class="status-dot"></span>
               <span class="status-text">Space kontrol ediliyor</span>
             </div>
-            <button class="account-button" id="account-button" aria-label="Hesap" title="Hesap">
+            <div class="account-button account-indicator" id="account-indicator" aria-label="API hazır" title="API hazır">
               <span class="account-avatar" id="account-avatar">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 21a7.5 7.5 0 0 1 15 0" /></svg>
               </span>
-            </button>
+            </div>
           </div>
         </header>
 
@@ -200,25 +200,12 @@
       </label>
     </div>
 
-    <div class="modal-backdrop" id="account-modal" hidden>
-      <section class="modal-card compact" role="dialog" aria-modal="true" aria-labelledby="account-title">
-        <button class="icon-button modal-close" data-close="account" aria-label="Pencereyi kapat">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
-        </button>
-        <div class="profile-line">
-          <span class="profile-avatar" id="profile-avatar">HF</span>
-          <div><span class="eyebrow">Bağlı hesap</span><h2 id="account-title">Hugging Face</h2><p id="profile-detail"></p></div>
-        </div>
-        <button class="logout-button" id="logout-button">Bağlantıyı kes</button>
-      </section>
-    </div>
-
     <div class="attachment-menu" id="attachment-menu" hidden>
       <button data-file="first"><span>＋</span><b>İlk kare</b><small>Videonun başlangıç görüntüsü</small></button>
       <button data-file="last"><span>→</span><b>Son kare</b><small>Videonun bitiş görüntüsü</small></button>
     </div>
 
     <div class="toast" id="toast" role="status" hidden></div>
-    <script type="module" src="./app.js?v=20260919-2"></script>
+    <script type="module" src="./app.js?v=20260919-3"></script>
   </body>
 </html>

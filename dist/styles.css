@@ -89,8 +89,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); box-shadow: 0 0 0 4px rgba(200,138,42,.1); }
 .space-status.ready .status-dot { background: var(--success); box-shadow: 0 0 0 4px rgba(46,139,97,.1); }
 .space-status.error .status-dot { background: var(--danger); box-shadow: 0 0 0 4px rgba(200,77,77,.1); }
-.account-button { width: 40px; height: 40px; border: 1px solid var(--line); background: rgba(255,255,255,.72); border-radius: 12px; padding: 3px; display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow-sm); }
-.account-button:hover { background: var(--surface); }
+.account-button { width: 40px; height: 40px; border: 1px solid var(--line); background: rgba(255,255,255,.72); border-radius: 12px; padding: 3px; display: grid; place-items: center; cursor: default; box-shadow: var(--shadow-sm); }
 .account-avatar { width: 32px; height: 32px; border-radius: 9px; background: var(--surface-soft); display: grid; place-items: center; overflow: hidden; flex: none; }
 .account-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .account-avatar svg { width: 17px; }
