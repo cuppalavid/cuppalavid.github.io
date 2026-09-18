@@ -1,0 +1,8 @@
+{
+  "client_id": "https://cuppalavid.github.io/.well-known/oauth-cimd",
+  "client_name": "Cuppalavid",
+  "redirect_uris": ["https://cuppalavid.github.io/"],
+  "token_endpoint_auth_method": "none",
+  "scope": "openid profile",
+  "client_uri": "https://cuppalavid.github.io/"
+}
