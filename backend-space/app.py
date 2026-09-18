@@ -123,7 +123,7 @@ def run_generation(job_id: str, payload: dict[str, Any]) -> None:
     try:
         download_dir = WORK_ROOT / job_id / "downloads"
         download_dir.mkdir(parents=True, exist_ok=True)
-        client = Client(SPACE_ID, hf_token=token, verbose=False, download_files=str(download_dir))
+        client = Client(SPACE_ID, token=token, verbose=False, download_files=str(download_dir))
         remote_job = client.submit(
             prompt=payload["prompt"],
             image_path=handle_file(payload["first_image"]) if payload.get("first_image") else None,
